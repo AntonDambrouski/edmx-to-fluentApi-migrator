@@ -1,0 +1,344 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="AppMainModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="DatedPersons">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" Nullable="false" />
+          <Property Name="Name" Type="nchar" MaxLength="20" Nullable="false" />
+          <Property Name="Surname" Type="nchar" MaxLength="20" Nullable="false" />
+          <Property Name="Age" Type="int" />
+          <Property Name="Height" Type="nchar" MaxLength="10" />
+          <Property Name="Weight" Type="nchar" MaxLength="10" />
+          <Property Name="ZodiacSign" Type="nchar" MaxLength="10" />
+          <Property Name="UserId" Type="bigint" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Levels">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" Nullable="false" />
+          <Property Name="Name" Type="nchar" MaxLength="20" Nullable="false" />
+          <Property Name="RequiredPoints" Type="bigint" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Users">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Name" Type="nchar" MaxLength="20" Nullable="false" />
+          <Property Name="Surname" Type="nchar" MaxLength="20" Nullable="false" />
+          <Property Name="Age" Type="int" Nullable="false" />
+          <Property Name="PhoneNumber" Type="nchar" MaxLength="30" />
+          <Property Name="Email" Type="nchar" MaxLength="100" Nullable="false" />
+        </EntityType>
+        <EntityType Name="UsersAndLevels">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" Nullable="false" />
+          <Property Name="UserId" Type="bigint" Nullable="false" />
+          <Property Name="LevelId" Type="bigint" Nullable="false" />
+        </EntityType>
+        <EntityType Name="UsersSettings">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="bigint" Nullable="false" />
+          <Property Name="IsVisible" Type="bit" Nullable="false" />
+          <Property Name="Theme" Type="nchar" MaxLength="20" Nullable="false" />
+          <Property Name="ProfileType" Type="nchar" MaxLength="20" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_DatedPersons_Users">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="DatedPersons" Type="Self.DatedPersons" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DatedPersons">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UsersAndLevels_Levels">
+          <End Role="Levels" Type="Self.Levels" Multiplicity="1" />
+          <End Role="UsersAndLevels" Type="Self.UsersAndLevels" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Levels">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="UsersAndLevels">
+              <PropertyRef Name="LevelId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UsersAndLevels_Users">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="UsersAndLevels" Type="Self.UsersAndLevels" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="UsersAndLevels">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UsersSettings_Users1">
+          <End Role="Users" Type="Self.Users" Multiplicity="1" />
+          <End Role="UsersSettings" Type="Self.UsersSettings" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="UsersSettings">
+              <PropertyRef Name="Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="AppMainModelStoreContainer">
+          <EntitySet Name="DatedPersons" EntityType="Self.DatedPersons" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Levels" EntityType="Self.Levels" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Users" EntityType="Self.Users" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="UsersAndLevels" EntityType="Self.UsersAndLevels" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="UsersSettings" EntityType="Self.UsersSettings" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK_DatedPersons_Users" Association="Self.FK_DatedPersons_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="DatedPersons" EntitySet="DatedPersons" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UsersAndLevels_Levels" Association="Self.FK_UsersAndLevels_Levels">
+            <End Role="Levels" EntitySet="Levels" />
+            <End Role="UsersAndLevels" EntitySet="UsersAndLevels" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UsersAndLevels_Users" Association="Self.FK_UsersAndLevels_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="UsersAndLevels" EntitySet="UsersAndLevels" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UsersSettings_Users1" Association="Self.FK_UsersSettings_Users1">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="UsersSettings" EntitySet="UsersSettings" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="AppMainModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="DatedPerson">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <Property Name="Surname" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <Property Name="Age" Type="Int32" />
+          <Property Name="Height" Type="String" MaxLength="10" FixedLength="true" Unicode="true" />
+          <Property Name="Weight" Type="String" MaxLength="10" FixedLength="true" Unicode="true" />
+          <Property Name="ZodiacSign" Type="String" MaxLength="10" FixedLength="true" Unicode="true" />
+          <Property Name="UserId" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="User" Relationship="Self.FK_DatedPersons_Users" FromRole="DatedPersons" ToRole="Users" />
+        </EntityType>
+        <EntityType Name="Level">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <Property Name="RequiredPoints" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="UsersAndLevels" Relationship="Self.FK_UsersAndLevels_Levels" FromRole="Levels" ToRole="UsersAndLevels" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <Property Name="Surname" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <Property Name="Age" Type="Int32" Nullable="false" />
+          <Property Name="PhoneNumber" Type="String" MaxLength="30" FixedLength="true" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="100" FixedLength="true" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="DatedPersons" Relationship="Self.FK_DatedPersons_Users" FromRole="Users" ToRole="DatedPersons" />
+          <NavigationProperty Name="UsersAndLevels" Relationship="Self.FK_UsersAndLevels_Users" FromRole="Users" ToRole="UsersAndLevels" />
+          <NavigationProperty Name="UsersSetting" Relationship="Self.FK_UsersSettings_Users1" FromRole="Users" ToRole="UsersSettings" />
+        </EntityType>
+        <EntityType Name="UsersAndLevel">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" />
+          <Property Name="UserId" Type="Int64" Nullable="false" />
+          <Property Name="LevelId" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Level" Relationship="Self.FK_UsersAndLevels_Levels" FromRole="UsersAndLevels" ToRole="Levels" />
+          <NavigationProperty Name="User" Relationship="Self.FK_UsersAndLevels_Users" FromRole="UsersAndLevels" ToRole="Users" />
+        </EntityType>
+        <EntityType Name="UsersSetting">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" />
+          <Property Name="IsVisible" Type="Boolean" Nullable="false" />
+          <Property Name="Theme" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <Property Name="ProfileType" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="User" Relationship="Self.FK_UsersSettings_Users1" FromRole="UsersSettings" ToRole="Users" />
+        </EntityType>
+        <Association Name="FK_DatedPersons_Users">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="DatedPersons" Type="Self.DatedPerson" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DatedPersons">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UsersAndLevels_Levels">
+          <End Role="Levels" Type="Self.Level" Multiplicity="1" />
+          <End Role="UsersAndLevels" Type="Self.UsersAndLevel" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Levels">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="UsersAndLevels">
+              <PropertyRef Name="LevelId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UsersAndLevels_Users">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="UsersAndLevels" Type="Self.UsersAndLevel" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="UsersAndLevels">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_UsersSettings_Users1">
+          <End Role="Users" Type="Self.User" Multiplicity="1" />
+          <End Role="UsersSettings" Type="Self.UsersSetting" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Users">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="UsersSettings">
+              <PropertyRef Name="Id" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="AppMainEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="DatedPersons" EntityType="Self.DatedPerson" />
+          <EntitySet Name="Levels" EntityType="Self.Level" />
+          <EntitySet Name="Users" EntityType="Self.User" />
+          <EntitySet Name="UsersAndLevels" EntityType="Self.UsersAndLevel" />
+          <EntitySet Name="UsersSettings" EntityType="Self.UsersSetting" />
+          <AssociationSet Name="FK_DatedPersons_Users" Association="Self.FK_DatedPersons_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="DatedPersons" EntitySet="DatedPersons" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UsersAndLevels_Levels" Association="Self.FK_UsersAndLevels_Levels">
+            <End Role="Levels" EntitySet="Levels" />
+            <End Role="UsersAndLevels" EntitySet="UsersAndLevels" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UsersAndLevels_Users" Association="Self.FK_UsersAndLevels_Users">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="UsersAndLevels" EntitySet="UsersAndLevels" />
+          </AssociationSet>
+          <AssociationSet Name="FK_UsersSettings_Users1" Association="Self.FK_UsersSettings_Users1">
+            <End Role="Users" EntitySet="Users" />
+            <End Role="UsersSettings" EntitySet="UsersSettings" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="AppMainModelStoreContainer" CdmEntityContainer="AppMainEntities">
+          <EntitySetMapping Name="DatedPersons">
+            <EntityTypeMapping TypeName="AppMainModel.DatedPerson">
+              <MappingFragment StoreEntitySet="DatedPersons">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Surname" ColumnName="Surname" />
+                <ScalarProperty Name="Age" ColumnName="Age" />
+                <ScalarProperty Name="Height" ColumnName="Height" />
+                <ScalarProperty Name="Weight" ColumnName="Weight" />
+                <ScalarProperty Name="ZodiacSign" ColumnName="ZodiacSign" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Levels">
+            <EntityTypeMapping TypeName="AppMainModel.Level">
+              <MappingFragment StoreEntitySet="Levels">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="RequiredPoints" ColumnName="RequiredPoints" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Users">
+            <EntityTypeMapping TypeName="AppMainModel.User">
+              <MappingFragment StoreEntitySet="Users">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Surname" ColumnName="Surname" />
+                <ScalarProperty Name="Age" ColumnName="Age" />
+                <ScalarProperty Name="PhoneNumber" ColumnName="PhoneNumber" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="UsersAndLevels">
+            <EntityTypeMapping TypeName="AppMainModel.UsersAndLevel">
+              <MappingFragment StoreEntitySet="UsersAndLevels">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="LevelId" ColumnName="LevelId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="UsersSettings">
+            <EntityTypeMapping TypeName="AppMainModel.UsersSetting">
+              <MappingFragment StoreEntitySet="UsersSettings">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="IsVisible" ColumnName="IsVisible" />
+                <ScalarProperty Name="Theme" ColumnName="Theme" />
+                <ScalarProperty Name="ProfileType" ColumnName="ProfileType" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
