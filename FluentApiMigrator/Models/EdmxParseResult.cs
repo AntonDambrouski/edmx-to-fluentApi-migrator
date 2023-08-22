@@ -1,5 +1,5 @@
 ﻿namespace FluentApiMigrator.Models;
 
-internal class EdmxParseResult
+public class EdmxParseResult
 {
 }

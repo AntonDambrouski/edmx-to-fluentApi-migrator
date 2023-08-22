@@ -1,6 +1,8 @@
-﻿namespace FluentApiMigrator.Interfaces;
+﻿using FluentApiMigrator.Models;
+
+namespace FluentApiMigrator.Interfaces;
 
 public interface IProcessor
 {
-    void Process();
+    void Process(ProcessorContext context);
 }

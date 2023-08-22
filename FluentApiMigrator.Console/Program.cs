@@ -1,14 +1,16 @@
 ﻿using FluentApiMigrator.Interfaces;
+using FluentApiMigrator.Models;
 using FluentApiMigrator.Processors;
 
 
 var logger = NLog.LogManager.GetCurrentClassLogger();
 try
 {
-    var processors = new List<IProcessor> { new EdmxProcessor(), new FluentApiProcessor() };
+    var context = new ProcessorContext();
+    var processors = new List<IProcessor> { new EdmxFileProcessor(), new FluentApiProcessor() };
     foreach (var processor in processors)
     {
-        processor.Process();
+        processor.Process(context);
     }
 }
 catch (Exception ex)
