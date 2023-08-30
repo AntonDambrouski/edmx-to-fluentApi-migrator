@@ -1,4 +1,5 @@
-﻿using FluentApiMigrator.Interfaces;
+﻿using Microsoft.Extensions.Configuration;
+using FluentApiMigrator.Interfaces;
 using FluentApiMigrator.Models;
 using FluentApiMigrator.Processors;
 
@@ -6,7 +7,15 @@ using FluentApiMigrator.Processors;
 var logger = NLog.LogManager.GetCurrentClassLogger();
 try
 {
-    var context = new ProcessorContext();
+   var configs = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+       .AddJsonFile("appsettings.json")
+       .Build();
+
+    var context = new ProcessorContext()
+    {
+        EdmxFilePath = configs.GetSection("edmxFilePath").Value,
+    };
+
     var processors = new List<IProcessor> { new EdmxFileProcessor(), new FluentApiProcessor() };
     foreach (var processor in processors)
     {
