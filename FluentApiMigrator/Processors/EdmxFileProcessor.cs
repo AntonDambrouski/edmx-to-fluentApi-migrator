@@ -73,242 +73,230 @@ public class EdmxFileProcessor : IProcessor
     {
         var entitySetMappings = mappingsCollection.GetItems<EntityContainerMapping>().SelectMany(m => m.EntitySetMappings).ToList();
         var relationshipDescriptions = GetRelationshipDescriptions(entitySetMappings);
-        var tableColumnsDescriptions = GetTableColumnDescriptions(entitySetMappings);
+        var (tableColumnsDescriptions, commonEntityInfos) = GetTableColumnDescriptions(entitySetMappings);
         return new EdmxParseResult
         {
             EntitySetMappings = entitySetMappings,
             RelationshipDescriptions = relationshipDescriptions,
-            TableColumnsDescriptions = tableColumnsDescriptions
+            TableColumnsDescriptions = tableColumnsDescriptions,
+            CommonEntityInfos = commonEntityInfos,
         };
     }
 
-    private Dictionary<string, List<TableColumnDescription>> GetTableColumnDescriptions(List<EntitySetMapping> entitySetMappings)
+    private (Dictionary<string, List<TableColumnDescription>>, Dictionary<string, CommonEntityInfo>) GetTableColumnDescriptions(List<EntitySetMapping> entitySetMappings)
     {
-        var entityColumnData = new Dictionary<string, List<TableColumnDescription?>>(); // Create a dictionary to store column descriptions for each entity type
-        var entityTypeMappings = entitySetMappings.Select(m => m.EntityTypeMappings.First()).ToList(); // Get the EntityTypeMappings for all entity sets in the list
+        // Create a dictionary to store column descriptions for each entity type
+        var tableColumnDescription = new Dictionary<string, List<TableColumnDescription?>>();
+        var commonEntityInfos = new Dictionary<string, CommonEntityInfo>();
 
-        // Loop through each EntityTypeMapping
-        foreach (var entityTypeMapping in entityTypeMappings)
+        // Iterate through each EntitySetMapping to extract column descriptions
+        foreach (var entitySetMapping in entitySetMappings)
         {
+            var entityTypeMapping = entitySetMapping.EntityTypeMappings.First(); // Get the EntityTypeMapping for this EntitySetMapping
             var fragment = entityTypeMapping.Fragments.First(); // Get the first Fragment for the EntityTypeMapping
-            var storeEntityType = fragment.StoreEntitySet.ElementType; // Get the StoreEntityType (the corresponding entity type in the storage model)
-            var propertyMapping = fragment.PropertyMappings.OfType<ScalarPropertyMapping>(); // Get the property mappings for scalar properties
-            var entityType = entityTypeMapping.EntitySetMapping.EntitySet.ElementType; // Get the EntityType (the corresponding entity type in the conceptual model)
-            var keyProps = storeEntityType.KeyProperties; // Get the key properties of the StoreEntityType
+            var storageEntityType = fragment.StoreEntitySet.ElementType; // Get the StoreEntityType (the entity type in the storage model)
+            var scalarPropertyMappings = fragment.PropertyMappings.OfType<ScalarPropertyMapping>(); // Filter for scalar property mappings
+            var conceptualEntityType = entitySetMapping.EntitySet.ElementType; // Get the EntityType (the entity type in the conceptual model)
+            var storageKeyProperties = storageEntityType.KeyProperties; // Get the key properties of the StoreEntityType
+
+            commonEntityInfos[conceptualEntityType.Name] = new CommonEntityInfo
+            {
+                PrimaryKeys = storageKeyProperties.Select(p => p.Name).ToList(),
+                Table = fragment.StoreEntitySet.Table ?? fragment.StoreEntitySet.Name,
+                Schema = fragment.StoreEntitySet.Schema,
+            };
 
             // Map the properties from the StoreEntityType to TableColumnDescription objects
-            entityColumnData[entityType.Name] = storeEntityType.Properties.Select((p, i) =>
+            tableColumnDescription[conceptualEntityType.Name] = storageEntityType.Properties.Select((storageProperty, index) =>
             {
-                var mappedProperty = propertyMapping.FirstOrDefault(pm => pm.Column.Name.Equals(p.Name))?.Property; // Find the corresponding mapped property in property mappings
+                var mappedPropertyMapping = scalarPropertyMappings
+                .FirstOrDefault(mapping => mapping.Column.Name.Equals(storageProperty.Name))?.Property; // Find the corresponding mapped property in property mappings
 
-                if (mappedProperty is null) return null; // Property not found in mapping
+                if (mappedPropertyMapping is null) return null; // Property not found in mapping
 
                 // Create a TableColumnDescription object with property information
                 return new TableColumnDescription
                 {
-                    IsPrimaryKey = keyProps.Any(k => k.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)),
-                    IsFixedLength = p.IsFixedLength,
-                    IsComputed = p.IsStoreGeneratedComputed,
-                    IsIdentity = p.IsStoreGeneratedIdentity,
-                    IsNullable = p.Nullable,
-                    Precision = p.Precision,
-                    IsUnicode = p.IsUnicode,
-                    MaxLength = p.MaxLength,
-                    Name = mappedProperty.Name,
-                    Scale = p.Scale,
-                    SqlType = p.TypeName,
-                    DbName = p.Name,
-                    ClrType = mappedProperty.TypeName
+                    IsPrimaryKey = storageKeyProperties.Any(keyProp => keyProp.Name.Equals(storageProperty.Name, StringComparison.OrdinalIgnoreCase)),
+                    IsFixedLength = storageProperty.IsFixedLength,
+                    IsComputed = storageProperty.IsStoreGeneratedComputed,
+                    IsIdentity = storageProperty.IsStoreGeneratedIdentity,
+                    IsNullable = storageProperty.Nullable,
+                    MaxLength = storageProperty.MaxLength,
+                    EntityName = mappedPropertyMapping.Name,
+                    SqlType = storageProperty.TypeName,
+                    TableName = storageProperty.Name,
                 };
-            }).Where(c => c != null).ToList(); // Filter out null entries (unmapped properties)
+            }).Where(tableColumnDesc => tableColumnDesc != null).ToList(); // Filter out null entries (unmapped properties)
         }
 
-        return entityColumnData;
+        return (tableColumnDescription, commonEntityInfos);
     }
 
     private Dictionary<string, List<RelationshipDescription>> GetRelationshipDescriptions(List<EntitySetMapping> entitySetMappings)
     {
-        var foreignKeysInfo = GetForeignKeysInfo(entitySetMappings); // Get foreign keys information from entitySetMappings
+        var foreignKeysInfo = ExtractForeignKeysInfo(entitySetMappings); // Extract foreign keys information
         var relationshipData = new Dictionary<string, List<RelationshipDescription>>();
 
-        // Loop through each entity set in entitySetMappings
-        foreach (var entitySet in entitySetMappings.Select(e => e.EntitySet))
+        foreach (var entitySetMapping in entitySetMappings)
         {
-            var entitySetName = entitySet.ElementType.Name;
-            relationshipData[entitySetName] = new List<RelationshipDescription>(); // Create a list to store relationship descriptions for the current entity set
+            var entitySetName = entitySetMapping.EntitySet.ElementType.Name;
+            relationshipData[entitySetName] = new List<RelationshipDescription>(); // Initialize a list for relationship descriptions
 
-            // Get foreign key information related to the current entity set
-            var entitySetFkInfo = foreignKeysInfo.Values
-                .Where(fki => (fki.EntitySetNameFrom?.Equals(entitySetName) ?? false) || (fki.EntitySetNameTo?.Equals(entitySetName) ?? false));
+            var relatedForeignKeys = foreignKeysInfo.Values
+                .Where(fkInfo => (fkInfo.EntitySetNameFrom?.Equals(entitySetName) ?? false) || (fkInfo.EntitySetNameTo?.Equals(entitySetName) ?? false));
 
-            // Iterate through each foreign key information
-            foreach (var fkInfo in entitySetFkInfo)
+            // iterate through foreign keys related to the current entitites and set relationship description for them
+            foreach (var foreignKey in relatedForeignKeys)
             {
-                // Create a RelationshipDescription object to store relationship settings
                 var relationshipSettings = new RelationshipDescription
                 {
-                    ForeignKeys = fkInfo.ForeignKeys.ToList(),
-                    DeleteBehavior = fkInfo.DeleteBehaviorFrom == OperationAction.Cascade || fkInfo.DeleteBehaviorTo == OperationAction.Cascade
+                    ForeignKeys = foreignKey.ForeignKeys.ToList(),
+                    DeleteBehavior = (foreignKey.DeleteBehaviorFrom == OperationAction.Cascade || foreignKey.DeleteBehaviorTo == OperationAction.Cascade)
                         ? OperationAction.Cascade
                         : OperationAction.None,
                 };
 
                 // Check if the current entity set is the "From" or "To" entity set in the relationship
-                if (entitySetName.Equals(fkInfo.EntitySetNameFrom))
+                if (entitySetName.Equals(foreignKey.EntitySetNameFrom))
                 {
                     // Set relationship settings for the "From" side
                     relationshipSettings.From = new RelationshipEntityDescription
                     {
-                        EntityName = fkInfo.EntitySetNameFrom,
-                        NavigationPropertyName = fkInfo.NavPropertyNameFrom,
-                        RelationshipType = fkInfo.RelationshipTo,
-                        JoinKeyName = fkInfo.JoinTableKeyFrom
+                        EntityName = foreignKey.EntitySetNameFrom,
+                        NavigationPropertyName = foreignKey.NavPropertyNameFrom,
+                        RelationshipType = foreignKey.RelationshipTo,
+                        JoinKeyName = foreignKey.JoinTableKeyFrom
                     };
 
                     // Set relationship settings for the "To" side
                     relationshipSettings.To = new RelationshipEntityDescription
                     {
-                        EntityName = fkInfo.EntitySetNameTo,
-                        NavigationPropertyName = fkInfo.NavPropertyNameTo,
-                        RelationshipType = fkInfo.RelationshipFrom,
-                        JoinKeyName = fkInfo.JoinTableKeyTo
+                        EntityName = foreignKey.EntitySetNameTo,
+                        NavigationPropertyName = foreignKey.NavPropertyNameTo,
+                        RelationshipType = foreignKey.RelationshipFrom,
+                        JoinKeyName = foreignKey.JoinTableKeyTo
                     };
                 }
-                else if (entitySetName.Equals(fkInfo.EntitySetNameTo))
+                else if (entitySetName.Equals(foreignKey.EntitySetNameTo))
                 {
                     // Set relationship settings for the "From" side (reverse)
                     relationshipSettings.From = new RelationshipEntityDescription
                     {
-                        EntityName = fkInfo.EntitySetNameTo,
-                        NavigationPropertyName = fkInfo.NavPropertyNameTo,
-                        RelationshipType = fkInfo.RelationshipFrom,
-                        JoinKeyName = fkInfo.JoinTableKeyTo
+                        EntityName = foreignKey.EntitySetNameTo,
+                        NavigationPropertyName = foreignKey.NavPropertyNameTo,
+                        RelationshipType = foreignKey.RelationshipFrom,
+                        JoinKeyName = foreignKey.JoinTableKeyTo
                     };
 
                     // Set relationship settings for the "To" side (reverse)
                     relationshipSettings.To = new RelationshipEntityDescription
                     {
-                        EntityName = fkInfo.EntitySetNameFrom,
-                        NavigationPropertyName = fkInfo.NavPropertyNameFrom,
-                        RelationshipType = fkInfo.RelationshipTo,
-                        JoinKeyName = fkInfo.JoinTableKeyFrom
+                        EntityName = foreignKey.EntitySetNameFrom,
+                        NavigationPropertyName = foreignKey.NavPropertyNameFrom,
+                        RelationshipType = foreignKey.RelationshipTo,
+                        JoinKeyName = foreignKey.JoinTableKeyFrom
                     };
                 }
 
-                // If it's a many-to-many relationship, set the join table name
-                if (fkInfo.IsManyToMany)
+                // many to many relationship has join table
+                if (foreignKey.IsManyToMany)
                 {
-                    relationshipSettings.JoinTableName = fkInfo.JoinTableName;
+                    relationshipSettings.JoinTableName = foreignKey.JoinTableName;
                 }
-                
-                relationshipData[entitySetName].Add(relationshipSettings); // Add the relationship settings to the list for the current entity set
+
+                relationshipData[entitySetName].Add(relationshipSettings); // Add relationship settings to the list
             }
         }
 
         return relationshipData;
     }
 
-    // This method extracts foreign key information from entitySetMappings
-    private static Dictionary<string, ForeignKeyInfo> GetForeignKeysInfo(List<EntitySetMapping> entitySetMappings)
+    private static Dictionary<string, ForeignKeyInfo> ExtractForeignKeysInfo(List<EntitySetMapping> entitySetMappings)
     {
-        var joinTableMappings = entitySetMappings.FirstOrDefault()?.ContainerMapping?.AssociationSetMappings.ToList(); // Get join table mappings from entitySetMappings
-        var result = new Dictionary<string, ForeignKeyInfo>(); // Create a dictionary to store foreign key information
+        var associationSetMappings = entitySetMappings.FirstOrDefault()?.ContainerMapping?.AssociationSetMappings.ToList(); // Get association set mappings
+        var foreignKeysInfo = new Dictionary<string, ForeignKeyInfo>();
 
-        // Iterate through each entity set in entitySetMappings
-        foreach (var entitySet in entitySetMappings.Select(e => e.EntitySet))
+        foreach (var entitySetMapping in entitySetMappings)
         {
-            // Iterate through navigation properties of the current entity set
-            foreach (var navProperty in entitySet.ElementType.NavigationProperties)
+            foreach (var navProperty in entitySetMapping.EntitySet.ElementType.NavigationProperties)
             {
-                
-                var relationshipType = (AssociationType)navProperty.RelationshipType; // Get the relationship type (association) of the navigation property
+                var relationshipType = (AssociationType)navProperty.RelationshipType; // Get the relationship type
 
-                // Create a ForeignKeyInfo object if it doesn't already exist in the result dictionary
-                if (!result.TryGetValue(relationshipType.Name, out var fkInfo))
+                if (!foreignKeysInfo.TryGetValue(relationshipType.Name, out var foreignKeyInfo))
                 {
-                    fkInfo = new ForeignKeyInfo();
+                    foreignKeyInfo = new ForeignKeyInfo();
                 }
 
-                // Check if the constraint is null (many-to-many relationship)
+                // if constraint is null - it's many to many relationship
                 if (relationshipType.Constraint is null)
                 {
-                    
-                    var joinTableMapping = joinTableMappings.First(i => i.AssociationSet.Name.Equals(relationshipType.Name)); // Get the join table mapping related to the current relationship
-                    AddManyToManyFkInfo(fkInfo, entitySet, joinTableMapping, navProperty.Name);// Add foreign key information for many-to-many relationship
+                    var joinTableMapping = associationSetMappings.First(mapping => mapping.AssociationSet.Name.Equals(relationshipType.Name));
+                    AddManyToManyForeignKeyInfo(foreignKeyInfo, entitySetMapping.EntitySet, joinTableMapping, navProperty.Name);
                 }
                 else
                 {
-                    AddFkInfo(fkInfo, entitySet, navProperty); // Add foreign key information for regular (one-to-many or many-to-one) relationship
+                    AddForeignKeyInfo(foreignKeyInfo, entitySetMapping.EntitySet, navProperty);
                 }
 
-                
-                result[relationshipType.Name] = fkInfo; // Store the foreign key information in the result dictionary
+                foreignKeysInfo[relationshipType.Name] = foreignKeyInfo;
             }
         }
 
-        return result;
+        return foreignKeysInfo;
     }
 
-    // This method adds foreign key information for regular (one-to-many or many-to-one) relationship
-    private static void AddFkInfo(ForeignKeyInfo fkInfo, EntitySet entitySet, NavigationProperty navProperty)
+    private static void AddForeignKeyInfo(ForeignKeyInfo foreignKeyInfo, EntitySet entitySet, NavigationProperty navProperty)
     {
-        var constraint = (navProperty.RelationshipType as AssociationType).Constraint; // Get the constraint of the relationship
+        var constraint = (navProperty.RelationshipType as AssociationType)?.Constraint; // Get the constraint
 
-        // Iterate through foreign key properties in the constraint
-        foreach (var fkKey in constraint.ToProperties.Select(p => p.Name))
+        foreach (var foreignKeyProperty in constraint.ToProperties.Select(property => property.Name))
         {
-            fkInfo.ForeignKeys.Add(fkKey);
+            foreignKeyInfo.ForeignKeys.Add(foreignKeyProperty);
         }
 
-        // Set relationship multiplicity and other information
-        fkInfo.RelationshipFrom = constraint.FromRole.RelationshipMultiplicity;
-        fkInfo.RelationshipTo = constraint.ToRole.RelationshipMultiplicity;
+        foreignKeyInfo.RelationshipFrom = constraint.FromRole.RelationshipMultiplicity;
+        foreignKeyInfo.RelationshipTo = constraint.ToRole.RelationshipMultiplicity;
 
         var fromEndMemberName = navProperty.FromEndMember.Name;
 
-        // Check if the current role is the "From" role or the "To" role
         if (constraint.FromRole.Name.Equals(fromEndMemberName))
         {
-            fkInfo.NavPropertyNameFrom = navProperty.Name;
-            fkInfo.DeleteBehaviorFrom = constraint.ToRole.DeleteBehavior;
-            fkInfo.EntitySetNameFrom = entitySet.ElementType.Name;
+            foreignKeyInfo.NavPropertyNameFrom = navProperty.Name;
+            foreignKeyInfo.DeleteBehaviorFrom = constraint.ToRole.DeleteBehavior;
+            foreignKeyInfo.EntitySetNameFrom = entitySet.ElementType.Name;
         }
         else
         {
-            fkInfo.NavPropertyNameTo = navProperty.Name;
-            fkInfo.DeleteBehaviorTo = constraint.FromRole.DeleteBehavior;
-            fkInfo.EntitySetNameTo = entitySet.ElementType.Name;
+            foreignKeyInfo.NavPropertyNameTo = navProperty.Name;
+            foreignKeyInfo.DeleteBehaviorTo = constraint.FromRole.DeleteBehavior;
+            foreignKeyInfo.EntitySetNameTo = entitySet.ElementType.Name;
         }
     }
 
-    // This method adds foreign key information for a many-to-many relationship
-    private static void AddManyToManyFkInfo(ForeignKeyInfo fkInfo, EntitySet entitySet, AssociationSetMapping joinTableMapping, string navPropertyName)
+    private static void AddManyToManyForeignKeyInfo(ForeignKeyInfo foreignKeyInfo, EntitySet entitySet, AssociationSetMapping joinTableMapping, string navPropertyName)
     {
-        // Get the mapping of the source and target ends of the association set mapping
         var sourceEndMapping = joinTableMapping.SourceEndMapping;
         var targetEndMapping = joinTableMapping.TargetEndMapping;
-        fkInfo.JoinTableName = joinTableMapping.AssociationSet.Name; // Set the join table name in the ForeignKeyInfo object
+        foreignKeyInfo.JoinTableName = joinTableMapping.AssociationSet.Name;
 
-        // Check if the source end of the association set mapping corresponds to the current entity set
         if (sourceEndMapping.AssociationEnd.Name.Equals(entitySet.ElementType.Name))
         {
-            // Set the foreign key information for the "From" side of the relationship
-            fkInfo.JoinTableKeyFrom = sourceEndMapping.PropertyMappings.First().Column.Name;
-            fkInfo.RelationshipFrom = sourceEndMapping.AssociationEnd.RelationshipMultiplicity;
-            fkInfo.JoinTableKeyTo = targetEndMapping.PropertyMappings.First().Column.Name;
-            fkInfo.RelationshipTo = targetEndMapping.AssociationEnd.RelationshipMultiplicity;
-            fkInfo.EntitySetNameFrom = entitySet.ElementType.Name;
-            fkInfo.NavPropertyNameFrom = navPropertyName;
+            foreignKeyInfo.JoinTableKeyFrom = sourceEndMapping.PropertyMappings.First().Column.Name;
+            foreignKeyInfo.RelationshipFrom = sourceEndMapping.AssociationEnd.RelationshipMultiplicity;
+            foreignKeyInfo.JoinTableKeyTo = targetEndMapping.PropertyMappings.First().Column.Name;
+            foreignKeyInfo.RelationshipTo = targetEndMapping.AssociationEnd.RelationshipMultiplicity;
+            foreignKeyInfo.EntitySetNameFrom = entitySet.ElementType.Name;
+            foreignKeyInfo.NavPropertyNameFrom = navPropertyName;
         }
         else
         {
-            // Set the foreign key information for the "To" side of the relationship (reverse)
-            fkInfo.JoinTableKeyTo = sourceEndMapping.PropertyMappings.First().Column.Name;
-            fkInfo.RelationshipTo = sourceEndMapping.AssociationEnd.RelationshipMultiplicity;
-            fkInfo.JoinTableKeyFrom = targetEndMapping.PropertyMappings.First().Column.Name;
-            fkInfo.RelationshipFrom = targetEndMapping.AssociationEnd.RelationshipMultiplicity;
-            fkInfo.NavPropertyNameTo = navPropertyName;
-            fkInfo.EntitySetNameTo = entitySet.ElementType.Name;
+            foreignKeyInfo.JoinTableKeyTo = sourceEndMapping.PropertyMappings.First().Column.Name;
+            foreignKeyInfo.RelationshipTo = sourceEndMapping.AssociationEnd.RelationshipMultiplicity;
+            foreignKeyInfo.JoinTableKeyFrom = targetEndMapping.PropertyMappings.First().Column.Name;
+            foreignKeyInfo.RelationshipFrom = targetEndMapping.AssociationEnd.RelationshipMultiplicity;
+            foreignKeyInfo.NavPropertyNameTo = navPropertyName;
+            foreignKeyInfo.EntitySetNameTo = entitySet.ElementType.Name;
         }
     }
 }

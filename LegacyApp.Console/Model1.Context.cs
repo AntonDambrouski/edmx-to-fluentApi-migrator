@@ -13,10 +13,10 @@ namespace LegacyApp.Console
     using System.Data.Entity;
     using System.Data.Entity.Infrastructure;
     
-    public partial class AppMainEntities : DbContext
+    public partial class AppMainEntities1 : DbContext
     {
-        public AppMainEntities()
-            : base("name=AppMainEntities")
+        public AppMainEntities1()
+            : base("name=AppMainEntities1")
         {
         }
     
@@ -28,7 +28,6 @@ namespace LegacyApp.Console
         public virtual DbSet<DatedPerson> DatedPersons { get; set; }
         public virtual DbSet<Level> Levels { get; set; }
         public virtual DbSet<User> Users { get; set; }
-        public virtual DbSet<UsersAndLevel> UsersAndLevels { get; set; }
         public virtual DbSet<UsersSetting> UsersSettings { get; set; }
     }
 }

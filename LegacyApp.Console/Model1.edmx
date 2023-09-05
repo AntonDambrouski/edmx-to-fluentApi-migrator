@@ -39,9 +39,9 @@
         </EntityType>
         <EntityType Name="UsersAndLevels">
           <Key>
-            <PropertyRef Name="Id" />
+            <PropertyRef Name="UserId" />
+            <PropertyRef Name="LevelId" />
           </Key>
-          <Property Name="Id" Type="bigint" Nullable="false" />
           <Property Name="UserId" Type="bigint" Nullable="false" />
           <Property Name="LevelId" Type="bigint" Nullable="false" />
         </EntityType>
@@ -151,7 +151,7 @@
           <Property Name="Id" Type="Int64" Nullable="false" />
           <Property Name="Name" Type="String" MaxLength="20" FixedLength="true" Unicode="true" Nullable="false" />
           <Property Name="RequiredPoints" Type="Int64" Nullable="false" />
-          <NavigationProperty Name="UsersAndLevels" Relationship="Self.FK_UsersAndLevels_Levels" FromRole="Levels" ToRole="UsersAndLevels" />
+          <NavigationProperty Name="Users" Relationship="Self.UsersAndLevels" FromRole="Levels" ToRole="Users" />
         </EntityType>
         <EntityType Name="User">
           <Key>
@@ -164,18 +164,8 @@
           <Property Name="PhoneNumber" Type="String" MaxLength="30" FixedLength="true" Unicode="true" />
           <Property Name="Email" Type="String" MaxLength="100" FixedLength="true" Unicode="true" Nullable="false" />
           <NavigationProperty Name="DatedPersons" Relationship="Self.FK_DatedPersons_Users" FromRole="Users" ToRole="DatedPersons" />
-          <NavigationProperty Name="UsersAndLevels" Relationship="Self.FK_UsersAndLevels_Users" FromRole="Users" ToRole="UsersAndLevels" />
           <NavigationProperty Name="UsersSetting" Relationship="Self.FK_UsersSettings_Users1" FromRole="Users" ToRole="UsersSettings" />
-        </EntityType>
-        <EntityType Name="UsersAndLevel">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="Int64" Nullable="false" />
-          <Property Name="UserId" Type="Int64" Nullable="false" />
-          <Property Name="LevelId" Type="Int64" Nullable="false" />
-          <NavigationProperty Name="Level" Relationship="Self.FK_UsersAndLevels_Levels" FromRole="UsersAndLevels" ToRole="Levels" />
-          <NavigationProperty Name="User" Relationship="Self.FK_UsersAndLevels_Users" FromRole="UsersAndLevels" ToRole="Users" />
+          <NavigationProperty Name="Levels" Relationship="Self.UsersAndLevels" FromRole="Users" ToRole="Levels" />
         </EntityType>
         <EntityType Name="UsersSetting">
           <Key>
@@ -199,30 +189,6 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="FK_UsersAndLevels_Levels">
-          <End Role="Levels" Type="Self.Level" Multiplicity="1" />
-          <End Role="UsersAndLevels" Type="Self.UsersAndLevel" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Levels">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="UsersAndLevels">
-              <PropertyRef Name="LevelId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
-        <Association Name="FK_UsersAndLevels_Users">
-          <End Role="Users" Type="Self.User" Multiplicity="1" />
-          <End Role="UsersAndLevels" Type="Self.UsersAndLevel" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Users">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="UsersAndLevels">
-              <PropertyRef Name="UserId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <Association Name="FK_UsersSettings_Users1">
           <End Role="Users" Type="Self.User" Multiplicity="1" />
           <End Role="UsersSettings" Type="Self.UsersSetting" Multiplicity="0..1" />
@@ -235,27 +201,26 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityContainer Name="AppMainEntities" annotation:LazyLoadingEnabled="true">
+        <Association Name="UsersAndLevels">
+          <End Role="Levels" Type="Self.Level" Multiplicity="*" />
+          <End Role="Users" Type="Self.User" Multiplicity="*" />
+        </Association>
+        <EntityContainer Name="AppMainEntities1" annotation:LazyLoadingEnabled="true">
           <EntitySet Name="DatedPersons" EntityType="Self.DatedPerson" />
           <EntitySet Name="Levels" EntityType="Self.Level" />
           <EntitySet Name="Users" EntityType="Self.User" />
-          <EntitySet Name="UsersAndLevels" EntityType="Self.UsersAndLevel" />
           <EntitySet Name="UsersSettings" EntityType="Self.UsersSetting" />
           <AssociationSet Name="FK_DatedPersons_Users" Association="Self.FK_DatedPersons_Users">
             <End Role="Users" EntitySet="Users" />
             <End Role="DatedPersons" EntitySet="DatedPersons" />
           </AssociationSet>
-          <AssociationSet Name="FK_UsersAndLevels_Levels" Association="Self.FK_UsersAndLevels_Levels">
-            <End Role="Levels" EntitySet="Levels" />
-            <End Role="UsersAndLevels" EntitySet="UsersAndLevels" />
-          </AssociationSet>
-          <AssociationSet Name="FK_UsersAndLevels_Users" Association="Self.FK_UsersAndLevels_Users">
-            <End Role="Users" EntitySet="Users" />
-            <End Role="UsersAndLevels" EntitySet="UsersAndLevels" />
-          </AssociationSet>
           <AssociationSet Name="FK_UsersSettings_Users1" Association="Self.FK_UsersSettings_Users1">
             <End Role="Users" EntitySet="Users" />
             <End Role="UsersSettings" EntitySet="UsersSettings" />
+          </AssociationSet>
+          <AssociationSet Name="UsersAndLevels" Association="Self.UsersAndLevels">
+            <End Role="Levels" EntitySet="Levels" />
+            <End Role="Users" EntitySet="Users" />
           </AssociationSet>
         </EntityContainer>
       </Schema>
@@ -263,7 +228,7 @@
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
-        <EntityContainerMapping StorageEntityContainer="AppMainModelStoreContainer" CdmEntityContainer="AppMainEntities">
+        <EntityContainerMapping StorageEntityContainer="AppMainModelStoreContainer" CdmEntityContainer="AppMainEntities1">
           <EntitySetMapping Name="DatedPersons">
             <EntityTypeMapping TypeName="AppMainModel.DatedPerson">
               <MappingFragment StoreEntitySet="DatedPersons">
@@ -299,15 +264,6 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="UsersAndLevels">
-            <EntityTypeMapping TypeName="AppMainModel.UsersAndLevel">
-              <MappingFragment StoreEntitySet="UsersAndLevels">
-                <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="UserId" ColumnName="UserId" />
-                <ScalarProperty Name="LevelId" ColumnName="LevelId" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
           <EntitySetMapping Name="UsersSettings">
             <EntityTypeMapping TypeName="AppMainModel.UsersSetting">
               <MappingFragment StoreEntitySet="UsersSettings">
@@ -318,6 +274,14 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
+          <AssociationSetMapping Name="UsersAndLevels" TypeName="AppMainModel.UsersAndLevels" StoreEntitySet="UsersAndLevels">
+            <EndProperty Name="Levels">
+              <ScalarProperty Name="Id" ColumnName="LevelId" />
+            </EndProperty>
+            <EndProperty Name="Users">
+              <ScalarProperty Name="Id" ColumnName="UserId" />
+            </EndProperty>
+          </AssociationSetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>

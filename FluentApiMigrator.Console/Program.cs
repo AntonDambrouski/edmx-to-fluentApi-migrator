@@ -14,6 +14,7 @@ try
     var context = new ProcessorContext()
     {
         EdmxFilePath = configs.GetSection("edmxFilePath").Value,
+        OutputDirectory = configs.GetSection("outputDirectory").Value,
     };
 
     var processors = new List<IProcessor> { new EdmxFileProcessor(), new FluentApiProcessor() };

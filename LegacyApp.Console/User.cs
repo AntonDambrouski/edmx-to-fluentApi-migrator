@@ -18,7 +18,7 @@ namespace LegacyApp.Console
         public User()
         {
             this.DatedPersons = new HashSet<DatedPerson>();
-            this.UsersAndLevels = new HashSet<UsersAndLevel>();
+            this.Levels = new HashSet<Level>();
         }
     
         public long Id { get; set; }
@@ -30,8 +30,8 @@ namespace LegacyApp.Console
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<DatedPerson> DatedPersons { get; set; }
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<UsersAndLevel> UsersAndLevels { get; set; }
         public virtual UsersSetting UsersSetting { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Level> Levels { get; set; }
     }
 }

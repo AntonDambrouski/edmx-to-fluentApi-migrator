@@ -17,7 +17,7 @@ namespace LegacyApp.Console
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public Level()
         {
-            this.UsersAndLevels = new HashSet<UsersAndLevel>();
+            this.Users = new HashSet<User>();
         }
     
         public long Id { get; set; }
@@ -25,6 +25,6 @@ namespace LegacyApp.Console
         public long RequiredPoints { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<UsersAndLevel> UsersAndLevels { get; set; }
+        public virtual ICollection<User> Users { get; set; }
     }
 }
