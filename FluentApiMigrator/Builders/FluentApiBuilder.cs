@@ -48,28 +48,27 @@ public class FluentApiBuilder
         _builder.AppendLine($"{Indent(CLASS_INDENT)}internal class {entityName}Configuration : EntityTypeConfiguration<{entityName}>")
             .AppendLine(Indent(CLASS_INDENT) + "{")
             .AppendLine($"{Indent(METHOD_INDENT)}public {entityName}Configuration()")
-            .AppendLine(Indent(METHOD_INDENT) + "{")
-            .AppendLine();
+            .AppendLine(Indent(METHOD_INDENT) + "{");
 
         return this;
     }
 
     public FluentApiBuilder ToTable(string tableName, string schema) 
     {
-        _builder.AppendLine($"{Indent(METHOD_INDENT)}ToTable(\"{tableName}\", \"{schema}\");");
+        _builder.AppendLine($"{Indent(METHOD_INDENT + 1)}ToTable(\"{tableName}\", \"{schema}\");");
         return this;
     }
 
     public FluentApiBuilder HasKey(params string[] primaryKeys)
     {
-        if (primaryKeys.Length == 0)
+        if (primaryKeys.Length == 1)
         {
-            _builder.AppendLine($"{Indent(METHOD_INDENT)}HasKey(e => e.{primaryKeys.First()});");
+            _builder.AppendLine($"{Indent(METHOD_INDENT + 1)}HasKey(e => e.{primaryKeys.First()});");
         }
         else
         {
             var keys = string.Join(", ", primaryKeys.Select(x => $"e.{x}"));
-            _builder .AppendLine($"{Indent(METHOD_INDENT)}HasKey(e => new {{ {keys} }})");
+            _builder.AppendLine($"{Indent(METHOD_INDENT + 1)}HasKey(e => new {{ {keys} }})");
         }
 
         return this;
@@ -83,7 +82,7 @@ public class FluentApiBuilder
 
     public FluentApiBuilder AddProperty(TableColumnDescription description)
     {
-        _builder.Append($"{Indent(METHOD_INDENT)}Property(e => e.{description.EntityName})")
+        _builder.Append($"{Indent(METHOD_INDENT + 1)}Property(e => e.{description.EntityName})")
             .Append($".HasColumnName(\"{description.TableName}\")")
             .Append($".HasColumnType(\"{description.SqlType}\")")
             .Append(description.IsNullable ? ".IsOptional()" : ".IsRequired()")
@@ -109,7 +108,7 @@ public class FluentApiBuilder
 
     public FluentApiBuilder AddRelationship(RelationshipDescription description, List<string> primaryKeys)
     {
-        _builder.Append(Indent(METHOD_INDENT) + HasRelationship(description.From.NavigationPropertyName, description.From.RelationshipType))
+        _builder.Append(Indent(METHOD_INDENT + 1) + HasRelationship(description.From.NavigationPropertyName, description.From.RelationshipType))
             .Append(WithRelationship(description, primaryKeys));
 
         if (!description.IsManyToMany && description.DeleteBehavior == OperationAction.Cascade)
@@ -174,12 +173,12 @@ public class FluentApiBuilder
                 if (description.From.RelationshipType == RelationshipMultiplicity.Many)
                 {
                     return $".WithMany({withExpression}).Map(m => {NEW_LINE}" +
-                            $"{Indent(METHOD_INDENT)}{{" +
+                            $"{Indent(METHOD_INDENT + 1)}{{" +
                             NEW_LINE +
-                            $"{Indent(3)}m.ToTable(\"{description.JoinTableName}\");{NEW_LINE}" +
-                            $"{Indent(3)}m.MapLeftKey(\"{description.From.JoinKeyName}\");{NEW_LINE}" +
-                            $"{Indent(3)}m.MapRightKey(\"{description.To.JoinKeyName}\");{NEW_LINE}" +
-                            $"{Indent(METHOD_INDENT)}}})";
+                            $"{Indent(4)}m.ToTable(\"{description.JoinTableName}\");{NEW_LINE}" +
+                            $"{Indent(4)}m.MapLeftKey(\"{description.From.JoinKeyName}\");{NEW_LINE}" +
+                            $"{Indent(4)}m.MapRightKey(\"{description.To.JoinKeyName}\");{NEW_LINE}" +
+                            $"{Indent(METHOD_INDENT + 1)}}})";
                 }
 
                 return $".WithMany({withExpression}){hasForeignKey}";

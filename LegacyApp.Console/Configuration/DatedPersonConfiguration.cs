@@ -9,18 +9,18 @@ namespace Change.Namespace.Generated
   {
     public DatedPersonConfiguration()
     {
+      ToTable("DatedPersons", "dbo");
+      HasKey(e => e.Id);
+      Property(e => e.Id).HasColumnName("Id").HasColumnType("bigint").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
+      Property(e => e.Name).HasColumnName("Name").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(20);
+      Property(e => e.Surname).HasColumnName("Surname").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(20);
+      Property(e => e.Age).HasColumnName("Age").HasColumnType("int").IsOptional();
+      Property(e => e.Height).HasColumnName("Height").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
+      Property(e => e.Weight).HasColumnName("Weight").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
+      Property(e => e.ZodiacSign).HasColumnName("ZodiacSign").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
+      Property(e => e.UserId).HasColumnName("UserId").HasColumnType("bigint").IsRequired();
 
-    ToTable("DatedPersons", "dbo");
-    Property(e => e.Id).HasColumnName("Id").HasColumnType("bigint").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
-    Property(e => e.Name).HasColumnName("Name").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(20);
-    Property(e => e.Surname).HasColumnName("Surname").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(20);
-    Property(e => e.Age).HasColumnName("Age").HasColumnType("int").IsOptional();
-    Property(e => e.Height).HasColumnName("Height").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
-    Property(e => e.Weight).HasColumnName("Weight").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
-    Property(e => e.ZodiacSign).HasColumnName("ZodiacSign").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
-    Property(e => e.UserId).HasColumnName("UserId").HasColumnType("bigint").IsRequired();
-
-    HasRequired(e => e.User).WithMany(e => e.DatedPersons).HasForeignKey(e => e.Id).WillCascadeOnDelete(false);
+      HasRequired(e => e.User).WithMany(e => e.DatedPersons).HasForeignKey(e => e.Id).WillCascadeOnDelete(false);
     }
   }
 }
