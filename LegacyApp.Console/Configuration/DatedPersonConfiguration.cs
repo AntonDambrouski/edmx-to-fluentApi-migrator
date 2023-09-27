@@ -1,3 +1,4 @@
+using LegacyApp.Console;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -20,7 +21,7 @@ namespace Change.Namespace.Generated
       Property(e => e.ZodiacSign).HasColumnName("ZodiacSign").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(10);
       Property(e => e.UserId).HasColumnName("UserId").HasColumnType("bigint").IsRequired();
 
-      HasRequired(e => e.User).WithMany(e => e.DatedPersons).HasForeignKey(e => e.Id).WillCascadeOnDelete(false);
+      HasRequired(e => e.User).WithMany(e => e.DatedPersons).HasForeignKey(e => e.UserId).WillCascadeOnDelete(false);
     }
   }
 }

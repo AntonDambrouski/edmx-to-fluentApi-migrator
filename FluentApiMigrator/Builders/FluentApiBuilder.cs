@@ -53,7 +53,7 @@ public class FluentApiBuilder
         return this;
     }
 
-    public FluentApiBuilder ToTable(string tableName, string schema) 
+    public FluentApiBuilder ToTable(string tableName, string schema)
     {
         _builder.AppendLine($"{Indent(METHOD_INDENT + 1)}ToTable(\"{tableName}\", \"{schema}\");");
         return this;
@@ -88,7 +88,7 @@ public class FluentApiBuilder
             .Append(description.IsNullable ? ".IsOptional()" : ".IsRequired()")
             .Append(description.IsFixedLength ?? false ? ".IsFixedLength()" : string.Empty)
             .Append(description.MaxLength > 0 ? $".HasMaxLength({description.MaxLength})" : string.Empty);
-       
+
         if (description.IsIdentity)
         {
             _builder.Append(".HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity)");
@@ -154,13 +154,17 @@ public class FluentApiBuilder
     private string WithRelationship(RelationshipDescription description, List<string> primaryKeys)
     {
         string hasForeignKey = string.Empty;
-        if (!description.IsManyToMany && !description.IsZeroOrOneToOne && primaryKeys.Any())
+        if (!description.IsManyToMany && !description.IsZeroOrOneToOne)
         {
-            var propertyExpression = primaryKeys.Count == 1
-                ? $"e => e.{primaryKeys[0]}"
-                : $"e => new {{ {string.Join(" ,", primaryKeys.Select(k => $"e.{k}"))} }}";
+            var foreignKeys = description.ForeignKeys.Except(primaryKeys).ToList();
+            if (foreignKeys.Any())
+            {
+                var propertyExpression = foreignKeys.Count == 1
+                    ? $"e => e.{foreignKeys[0]}"
+                    : $"e => new {{ {string.Join(" ,", foreignKeys.Select(k => $"e.{k}"))} }}";
 
-            hasForeignKey = $".HasForeignKey({propertyExpression})";
+                hasForeignKey = $".HasForeignKey({propertyExpression})";
+            }
         }
 
         var withExpression = !string.IsNullOrEmpty(description.To.NavigationPropertyName) ? $"e => e.{description.To.NavigationPropertyName}" : string.Empty;

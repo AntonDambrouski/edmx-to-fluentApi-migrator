@@ -1,3 +1,4 @@
+using LegacyApp.Console;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -18,7 +19,7 @@ namespace Change.Namespace.Generated
       Property(e => e.PhoneNumber).HasColumnName("PhoneNumber").HasColumnType("nchar").IsOptional().IsFixedLength().HasMaxLength(30);
       Property(e => e.Email).HasColumnName("Email").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(100);
 
-      HasMany(e => e.DatedPersons).WithRequired(e => e.User).HasForeignKey(e => e.Id).WillCascadeOnDelete(false);
+      HasMany(e => e.DatedPersons).WithRequired(e => e.User).HasForeignKey(e => e.UserId).WillCascadeOnDelete(false);
       HasMany(e => e.Levels).WithMany().Map(m => 
       {
         m.ToTable("UsersAndLevels");

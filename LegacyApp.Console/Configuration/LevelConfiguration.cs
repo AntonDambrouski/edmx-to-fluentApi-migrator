@@ -1,3 +1,4 @@
+using LegacyApp.Console;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

@@ -7,9 +7,10 @@ using FluentApiMigrator.Processors;
 var logger = NLog.LogManager.GetCurrentClassLogger();
 try
 {
-   var configs = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
-       .AddJsonFile("appsettings.json")
-       .Build();
+    logger.Info("Start migration");
+    var configs = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json")
+        .Build();
 
     var context = new ProcessorContext()
     {

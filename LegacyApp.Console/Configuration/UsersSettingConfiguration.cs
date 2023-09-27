@@ -1,3 +1,4 @@
+using LegacyApp.Console;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -16,7 +17,7 @@ namespace Change.Namespace.Generated
       Property(e => e.Theme).HasColumnName("Theme").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(20);
       Property(e => e.ProfileType).HasColumnName("ProfileType").HasColumnType("nchar").IsRequired().IsFixedLength().HasMaxLength(20);
 
-      HasRequired(e => e.User).WithOptional(e => e.UsersSetting).HasForeignKey(e => e.Id).WillCascadeOnDelete(false);
+      HasRequired(e => e.User).WithOptional(e => e.UsersSetting).WillCascadeOnDelete(false);
     }
   }
 }
